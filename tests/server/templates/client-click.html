@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+    <script src="/static/jquery.js"></script>
+    <script src="/js/ajax-patch.js"></script>
+    <script>
+    $(function() {
+        $('a').click(function() {
+            $.get('/long-ajax', function(data) {
+                $('p').html('Clicked!');
+            });
+        });
+    })
+    $(function() {
+        window.__waitForAjax(function() {
+            $('a').click();
+        }, function(ajaxIntercepted) {
+            if(ajaxIntercepted) {
+                $('div').html('AJAX intercepted!');
+            }
+        })
+    })
+    </script>
+</head>
+<body>
+    <a>Click me!</a>
+    <p></p>
+    <div></div>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+    <script src="/static/jquery.js"></script>
+    <script src="/static/jquery.infinitescroll.js"></script>
+    <script>
+        $(function() {
+            $('#content').infinitescroll({
+                navSelector: 'nav',
+                nextSelector: 'nav a',
+                itemSelector: '.item'
+            });
+        });
+    </script>
+    <style>
+        .item {
+            margin: 10px;
+            background: #aaa;
+            height: 200px;    
+        }
+    </style>
+</head>
+<body>
+    <div id="content">
+        <div class="item">Initial item</div>
+        <div class="item">Initial item</div>
+        <div class="item">Initial item</div>
+        <div class="item">Initial item</div>
+        <div class="item">Initial item</div>
+        <div class="item">Initial item</div>
+        <div class="item">Initial item</div>
+        <div class="item">Initial item</div>
+        <div class="item">Initial item</div>
+    </div>
+    <nav>
+        <a href="/infinitescroll/page/2">Next Page</a>
+    </nav>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+<head>
+    <script src="/static/jquery.js"></script>
+    <script>
+        $(document).ready(function() {
+            $(".tabs-menu a").click(function(event) {
+                event.preventDefault();
+                $(this).parent().addClass("current");
+                $(this).parent().siblings().removeClass("current");
+                var tab = $(this).attr("href");
+                $(".tab-content").not(tab).css("display", "none");
+                $.get('/tabs/' + tab.substring(1), function(content) {
+                    $(tab).html(content).fadeIn();
+                });
+            });
+            $('.tabs-menu .current a').click();
+            // Bind external site click event to test if navigation is locked
+            $('a#external-site').click(function() {
+                $(this).attr('data-clicked', 'true');
+            })
+        });
+    </script>
+    <style>
+        *, body, button, input, textarea, select {
+          /*text-rendering: optimizeLegibility;*/
+          font-size:100%;
+        }
+
+        body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,form,fieldset,input,textarea,p,blockquote,th,td { 
+          margin:0;
+          padding:0;
+        }
+        table {
+          border-collapse:collapse;
+          border-spacing:0;
+        }
+        fieldset,img { 
+          border:0;
+        }
+        address,caption,cite,code,dfn,em,strong,th,var {
+          font-style:normal;
+          font-weight:normal;
+        }
+        ol,ul {
+          list-style:none;
+        }
+        caption,th {
+          text-align:left;
+        }
+        h1,h2,h3,h4,h5,h6 {
+          font-size:100%;
+          font-weight:normal;
+        }
+        q:before,q:after {
+          content:'';
+        }
+        abbr,acronym { border:0;}
+
+
+        body {
+            padding: 20px;
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.5;
+            font-size: 14px;        
+        }
+
+        .tabs-menu {
+            height: 30px;
+            float: left;
+            clear: both;
+        }
+
+        .tabs-menu li {
+            height: 30px;
+            line-height: 30px;
+            float: left;
+            margin-right: 10px;
+            background-color: #ccc;
+            border-top: 1px solid #d4d4d1;
+            border-right: 1px solid #d4d4d1;
+            border-left: 1px solid #d4d4d1;
+        }
+
+        .tabs-menu li.current {
+            position: relative;
+            background-color: #fff;
+            border-bottom: 1px solid #fff;
+            z-index: 5;
+        }
+
+        .tabs-menu li a {
+            padding: 10px;
+            text-transform: uppercase;
+            color: #fff;
+            text-decoration: none; 
+        }
+
+        .tabs-menu .current a {
+            color: #2e7da3;
+        }
+
+        .tab {
+            border: 1px solid #d4d4d1;
+            background-color: #fff;
+            float: left;
+            margin-bottom: 20px;
+            width: auto;
+        }
+
+        .tab-content {
+            width: 660px;
+            padding: 20px;
+            display: none;
+        }
+
+        #tab-1 {
+         display: block;   
+        }
+    </style>
+</head>
+<body>
+    <a id="external-site" href="/tabs/external-site">External site</a>
+    <div id="tabs-container">
+        <ul class="tabs-menu">
+            <li class="current"><a href="#tab-1">Tab 1</a></li>
+            <li><a href="#tab-2">Tab 2</a></li>
+            <li><a href="#tab-3">Tab 3</a></li>
+        </ul>
+        <div style="clear: both"></div>
+        <div class="tab">
+            <div id="tab-1" class="tab-content"></div>
+            <div id="tab-2" class="tab-content"></div>
+            <div id="tab-3" class="tab-content"></div>
+        </div>
+    </div>
+</body>
+</html>
