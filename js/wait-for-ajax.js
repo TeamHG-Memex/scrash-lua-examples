@@ -79,7 +79,7 @@
         }
 
         // Cancel waiting if no ajaxes intercepted in timeoutBefore seconds
-        var timeoutBeforeId = setTimeout(function() {
+        setTimeout(function() {
             if(ajaxId == currentAjaxId) {
                 wrappedCallback(false);
             }
