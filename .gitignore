@@ -52,3 +52,6 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# demo.py outputs a file called 'out.png'
+out.png

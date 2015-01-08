@@ -1,19 +1,16 @@
-function scrollDown() {
-    window.__ajaxReady = false;
+;(function(window) {
 
-    Zepto(function() {
-        setTimeout(function() {
-            window.__waitForAjax(
-                function() {
-                    var height = $(document).height()
-                    $('html, body').scrollTop(height);
-                },
-                function() {
-                    window.__ajaxReady = true;
-                },
-                500,
-                200
-            );
-        }, 0);
-    });
-}
+    window.__scrollAndWait = function() {
+        window.__ajaxReady = false;
+
+        window.__waitForAjax(
+            window.__scrollBottom,
+            function() {
+                window.__ajaxReady = true;
+            },
+            500,
+            200
+        );
+    }
+
+})(window);
