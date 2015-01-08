@@ -1,42 +1,45 @@
+--[[
+python demo.py http://www.reddit.com/r/IAmA/comments/qccer/i_am_neil_degrasse_tyson_ask_me_anything/ \
+               lua/ajax-click.lua \
+               js/zepto.js \
+               js/wait-for-ajax.js \
+               js/close-overlay.js \
+               js/scroll.js \
+               js/ajax-click.js
+]]
+
 function click_and_wait(splash)
-    splash:runjs([[
-        window.__ajaxReady = false;
-        $(function() {
-            setTimeout(function() {
-                window.__waitForAjax(function() {
-                    $('a').click();
-                }, function(ajaxIntercepted) {
-                    if(ajaxIntercepted) {
-                        $('p').attr('data-ajax-intercepted', 'true');
-                    }
-                    window.__ajaxReady = true;
-                });
-            }, 50);
-        })
+  splash:runjs([[
+    __ajaxClick();
+  ]])
+  for j=1,20 do
+    ready = splash:runjs([[
+      window.__ajaxReady
     ]])
-    for j=1,50 do
-        ready = splash:runjs([[
-            window.__ajaxReady;
-        ]])
-        if ready then
-            break
-        end
-        assert(splash:wait(0.1))
+    if ready then
+      break
     end
+    assert(splash:wait(0.5))
+  end
 end
 
 function main(splash)
   local url = splash.args.url
-  -- assert(splash:autoload('file:///app/js/ajax-patch.js'))
+  local click_count = splash.args.click_count or 3
+
   ok, reason = splash:autoload(splash.args.js_source)
   assert(splash:go(url))
-  
-  --splash:runjs(splash.args.js_source)
-  click_and_wait(splash)
 
+  for i=1,click_count do
+    click_and_wait(splash)
+  end
+
+  splash:runjs([[
+    window.__scrollTop();
+  ]])
   splash:stop()
   splash:set_viewport("full")
- 
+
   return {
     html = splash:html(),
     png = splash:png{width=640},

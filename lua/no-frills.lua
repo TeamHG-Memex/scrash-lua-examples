@@ -5,6 +5,9 @@ with the page at all.
 python demo.py https://twitter.com/cnn lua/no-frills.lua
 
 python demo.py http://dontsellbodies.org/ lua/no-frills.lua
+
+python demo.py http://www.reddit.com/r/IAmA/comments/qccer/i_am_neil_degrasse_tyson_ask_me_anything/ \
+               lua/no-frills.lua
 ]]
 
 
