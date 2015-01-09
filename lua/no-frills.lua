@@ -8,6 +8,9 @@ python demo.py http://dontsellbodies.org/ lua/no-frills.lua
 
 python demo.py http://www.reddit.com/r/IAmA/comments/qccer/i_am_neil_degrasse_tyson_ask_me_anything/ \
                lua/no-frills.lua
+
+python demo.py 'http://www.amazon.com/Instant-Video/b/ref=topnav_storetab_atv?_encoding=UTF8&node=2858778011' \
+               lua/no-frills.lua
 ]]
 
 
