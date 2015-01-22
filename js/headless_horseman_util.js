@@ -37,7 +37,7 @@
         setTimeout(callback, 0);
     }
 
-    // Click on anchor elements that look like they might trigger an XHR.
+    // Click on elements that look like they might trigger an XHR.
     // Returns a promise.
     function clickXhrElements() {
         var p = new _Promise();
@@ -133,6 +133,63 @@
         var regex = /(more|load)/i;
 
         return element.textContent.match(regex);
+    }
+
+    // Click on anchor elements that look like they might trigger an XHR.
+    // Returns a promise.
+    function clickXhrElements() {
+        var p = new _Promise();
+        var elements = findElementsWithListener('click');
+        var currentElement = 0;
+
+        // Iterate through elements looking for one that might trigger
+        // an XHR.
+        while (!_likelyTriggersXHR(elements[currentElement])) {
+            currentElement++;
+
+            if (currentElement >= elements.length) {
+                p.resolve();
+                return p;
+            }
+        }
+
+        if (_visual) {
+            // Scroll so that element is visible before clicking.
+            var el = elements[currentElement];
+            var elTop = el.offsetTop - el.scrollTop + el.clientTop;
+            window.scrollTo(0, elTop);
+        }
+
+        // Now we have a clickable element: click it and wait for the
+        // XHR to finish.
+        p.resolve(whenXhrFinished());
+        _debugLog('Clicking on', elements[currentElement]);
+        _trigger('click', elements[currentElement]);
+
+        return p;
+    }
+
+    // Mouse over elements that have mouseover event handlers.
+    // Returns a promise.
+    function mouseoverElements() {
+        var p = new _Promise();
+        var elements = findElementsWithListener('mouseover');
+        var currentElement = 0;
+
+        elements.forEach(function (element) {
+            if (_visual) {
+                // Scroll so that element is visible before mouseover.
+                var elTop = element.offsetTop - element.scrollTop + element.clientTop;
+                window.scrollTo(0, elTop);
+            }
+
+            // Now we have a mouserover-able element.
+            _debugLog('Mousing over', element);
+            _trigger('mouseover', element);
+        });
+
+        p.resolve();
+        return p;
     }
 
     // Resolve a promise on the next tick.
@@ -410,7 +467,7 @@
     // next tick.
     function _Promise() {
         this.isResolved = false;
-        this.value;
+        this.value = undefined;
         this.callbacks = [];
     }
 
@@ -420,7 +477,7 @@
         var p = new _Promise();
 
         if (this.isResolved) {
-            p.resolve(callback(value));
+            p.resolve(callback(this.value));
         } else {
             this.callbacks.push(function (value) {
                 p.resolve(callback(value));
@@ -443,7 +500,7 @@
             });
         } else {
             this.isResolved = true;
-            this.resolutionValue = value;
+            this.value = value;
 
             setTimeout(function () {
                 self.callbacks.forEach(function (callback) {
@@ -458,6 +515,7 @@
         'clickXhrElements': clickXhrElements,
         'closeOverlay': closeOverlay,
         'findElementsWithListener': findElementsWithListener,
+        'mouseoverElements': mouseoverElements,
         'nextTick': nextTick,
         'patchAddEventListener': patchAddEventListener,
         'patchXhrSend': patchXhrSend,

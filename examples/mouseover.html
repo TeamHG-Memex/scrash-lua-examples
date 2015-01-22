@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Headless Horseman Testbed - Event Listeners</title>
+    <script src="../js/headless_horseman_util.js"></script>
+    <script>
+      HH = __headless_horseman__
+      HH.setDebug(true);
+      HH.patchAddEventListener();
+      HH.patchXhrSend();
+
+      function onLoad() {
+        document.getElementById('attach-me').addEventListener('mouseover', function () {show(2)});
+        document.getElementById('attach-me').addEventListener('mouseout', function () {hide(2)});
+
+
+        HH.wait(1000)
+          .then(function () {
+            console.log("Going to mouseover elements.");
+            HH.mouseoverElements()
+          })
+          .then(function () {
+            console.log("Finished mouseover elements.");
+          });
+      }
+
+      function show(n) {
+        var el = document.getElementById('hidden' + n);
+        el.style.visibility = 'visible';
+      }
+
+      function hide(n) {
+        var el = document.getElementById('hidden' + n);
+        el.style.visibility = 'hidden';
+      }
+    </script>
+  </head>
+
+  <body style="max-width: 30em;" onload='onLoad()'>
+    <h1>Lorem ipsum dolor sit amet</h1>
+    <p>
+      <strong>
+        Will automatically find and hover over the link, which will display a hidden paragraph of text.
+      </strong>
+    </p>
+    <p>
+      <a href="#" onmouseover='show(1)' onmouseout='hide(1)'>I have an onmouseover attribute.</a>
+      <span id='hidden1' style='visibility: hidden;'>HIDDEN TEXT #1.</span>
+    </p>
+    <p>
+      <a id='attach-me' href="#">I have an attached event handler.</a>
+      <span id='hidden2' style='visibility: hidden;'> HIDDEN TEXT #2.</span>
+    </p>
+  </body>
+</html>

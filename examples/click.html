@@ -23,9 +23,10 @@
         });
 
         console.log("Going to click on XHR elements.");
-        HH.clickXhrElements(function () {
-          console.log("Finished clicking XHR elements.");
-        });
+        HH.clickXhrElements()
+          .then(function () {
+            console.log("Finished clicking XHR elements.");
+          });
       }
     </script>
   </head>
