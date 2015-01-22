@@ -37,8 +37,12 @@ for lua_script in lua_scripts:
     headers = {'content-type':'application/json'}
 
     if curl:
+        body = open('body', 'w')
+        body.write(data)
+        body.close()
+
         header_args = " ".join([r"-H '%s:%s'" % (k,v) for (k,v) in headers.items()])
-        curl = r"curl -d '%s' %s '%s'" % (data, header_args, SPLASH_URL)
+        curl = r"curl -d @body %s '%s'" % (header_args, SPLASH_URL)
         print("Your curl command is:\n%s" % curl)
     else:
         print("Requesting %s" % url)

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Headless Horseman Testbed - Event Listeners</title>
+    <script src="../js/jquery.js"></script>
+    <script src="../js/headless_horseman_util.js"></script>
+    <script>
+      HH = __headless_horseman__
+      HH.setDebug(true);
+      HH.patchAddEventListener();
+      HH.patchXhrSend();
+
+      function onLoad() {
+        document.getElementById('load-more').addEventListener('click', function () {
+          var xhr = new XMLHttpRequest();
+          xhr.open('get', 'http://baconipsum.com/api/?type=all-meat&paras=1&start-with-lorem=1');
+          xhr.onload = function (e) {
+            var response = JSON.parse(this.response);
+            var p = document.createElement('p');
+            p.appendChild(document.createTextNode(response[0]));
+            document.body.appendChild(p);
+          };
+          xhr.send();
+        });
+
+        console.log("Going to click on XHR elements.");
+        HH.clickXhrElements(function () {
+          console.log("Finished clicking XHR elements.");
+        });
+      }
+    </script>
+  </head>
+
+  <body style="max-width: 30em;" onload='onLoad()'>
+    <h1>Lorem ipsum dolor sit amet</h1>
+    <p>
+      <a id="load-more" href="#">
+        Load more...
+      </a>
+    </p>
+    <p>
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed mi vel sem viverra molestie eget et ipsum. Quisque vitae tortor ut sapien eleifend ornare. Nulla at odio commodo justo finibus commodo. Suspendisse sagittis in dui venenatis bibendum. Ut at convallis diam. Aenean accumsan sagittis nulla nec commodo. Nullam imperdiet sodales sem eu ultrices.
+    </p>
+  </body>
+</html>

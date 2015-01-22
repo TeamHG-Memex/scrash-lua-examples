@@ -1,8 +1,6 @@
 ;(function(window) {
 
-    window.__mouseOver = function() {
-        window.__ajaxReady = false;
-
+    window.__mouseOver = function(lua_resume) {
         var nodes = window.__findListeners('mouseover');
         var actions = [];
 
@@ -13,8 +11,8 @@
         });
 
         window.__waitForAjax(actions, function(ajaxIntercepted) {
-            window.__ajaxReady = true;
             Zepto('span').attr('data-ajax-intercepted', ajaxIntercepted)
+            lua_resume();
         });
     };
 

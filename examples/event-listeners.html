@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Headless Horseman Testbed - Click</title>
+    <script src="../js/jquery.js"></script>
+    <script src="../js/headless_horseman_util.js"></script>
+    <script>
+      HH = __headless_horseman__;
+      HH.setDebug(true);
+      HH.patchAddEventListener();
+
+      function onLoad() {
+        document.getElementById('click-listener').addEventListener('click', function () {
+          console.log('I have a click event listener.');
+        });
+
+        clickListeners = HH.findElementsWithListener('click');
+        console.log("Found elements with click listeners: ", clickListeners);
+
+        console.log("Clicking on the elements.");
+        clickListeners.forEach(function (clickListener) {
+          if (clickListener.onclick) {
+            clickListener.onclick();
+          } else {
+            var clickEvent = new Event('click');
+            clickListener.dispatchEvent(clickEvent);
+          }
+        });
+      }
+    </script>
+  </head>
+
+  <body style="max-width: 30em;" onload='onLoad()'>
+    <h1>Lorem ipsum dolor sit amet</h1>
+    <p>
+      <a id="onclick-attrib"
+         href="#"
+         onclick="console.log('I have an onclick attribute.');">
+        I have an onclick attribute
+      </a>
+    </p>
+    <p>
+      <a id="click-listener" href="#">
+        I have a click event listener
+      </a>
+    </p>
+  </body>
+</html>

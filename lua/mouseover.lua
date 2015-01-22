@@ -7,28 +7,14 @@ python demo.py 'http://www.amazon.com/Instant-Video/b/ref=topnav_storetab_atv?_e
                js/mouseover.js
 ]]
 
-function mouseover_bound_elements_and_wait(splash)
-  splash:runjs([[
-    window.__mouseOver();
-  ]])
-  for j=1,20 do
-    ready = splash:runjs([[
-      window.__ajaxReady
-    ]])
-    if ready then
-      break
-    end
-    assert(splash:wait(0.5))
-  end
-end
-
 function main(splash)
   local url = splash.args.url
 
   splash:autoload(splash.args.js_source)
   assert(splash:go(url))
 
-  mouseover_bound_elements_and_wait(splash)
+  splash:runjs_async("Zepto(function () {lua_resume()});")
+  splash:runjs_async("window.__mouseOver(lua_resume);")
 
   splash:stop()
   splash:set_viewport("full")
