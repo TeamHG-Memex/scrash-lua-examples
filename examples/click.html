@@ -2,7 +2,6 @@
 <html>
   <head>
     <title>Headless Horseman Testbed - Event Listeners</title>
-    <script src="../js/jquery.js"></script>
     <script src="../js/headless_horseman_util.js"></script>
     <script>
       HH = __headless_horseman__
@@ -33,6 +32,11 @@
 
   <body style="max-width: 30em;" onload='onLoad()'>
     <h1>Lorem ipsum dolor sit amet</h1>
+    <p>
+      <strong>
+        Will automatically find and click the XHR link, which will load a 2nd paragraph of text.
+      </strong>
+    </p>
     <p>
       <a id="load-more" href="#">
         Load more...

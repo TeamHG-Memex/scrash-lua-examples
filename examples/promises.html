@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Headless Horseman Testbed - Promises</title>
+    <script src="../js/headless_horseman_util.js"></script>
+    <script>
+      HH = __headless_horseman__
+      HH.setDebug(true);
+      HH.patchAddEventListener();
+      HH.patchXhrSend();
+
+      paragraphNumber = 1;
+
+      function addParagraph() {
+        var p = document.createElement('p');
+        p.appendChild(document.createTextNode('This is paragraph #' + paragraphNumber++ + '.'));
+        document.body.appendChild(p);
+      }
+
+      function onLoad() {
+        HH.wait(1000).then(function () {
+          addParagraph();
+          return HH.wait(1000);
+        }).then(function () {
+          addParagraph();
+          return HH.wait(1000);
+        }).then(function () {
+          addParagraph();
+          return HH.wait(1000);
+        }).then(function () {
+          addParagraph();
+          return HH.wait(1000);
+        }).then(function () {
+          addParagraph();
+        });
+      }
+    </script>
+  </head>
+
+  <body style="max-width: 30em;" onload='onLoad()'>
+    <h1>Lorem ipsum dolor sit amet</h1>
+    <p>
+      <strong>
+        The page will run 5 promises that are chained together and each one delays for 1 second.
+        Each promise adds a paragraph of text to the body.
+      </strong>
+    </p>
+  </body>
+</html>

@@ -2,8 +2,12 @@
 <html>
   <head>
     <title>Headless Horseman Testbed - Infinite Scroll XHR</title>
-    <script src="../js/jquery.js"></script>
     <script src="../js/headless_horseman_util.js"></script>
+    <style>
+      li {
+        margin-bottom: 1em;
+      }
+    </style>
     <script>
       HH = __headless_horseman__
       HH.setDebug(true);
@@ -16,20 +20,47 @@
             loadMore();
           }
         });
+
+        HH.nextTick()
+          .then(function () {
+            console.log("About to scroll.");
+            return HH.whenAll(HH.whenXhrFinished(), HH.scroll(window, 0, 'bottom'))
+          })
+          .then(function () {
+            console.log("Scrolled to bottom one time.");
+            return HH.whenAll(HH.whenXhrFinished(), HH.scroll(window, 0, 'bottom'));
+          })
+          .then(function () {
+            console.log("Scrolled to bottom two times.");
+            return HH.whenAll(HH.whenXhrFinished(), HH.scroll(window, 0, 'bottom'));
+          })
+          .then(function () {
+            console.log("Scrolled to bottom three times.");
+            return HH.scroll(window, 0, 'top');
+          })
+          .then(function () {
+            console.log("Scrolled back up to top.");
+          })
       }
 
       function loadMore() {
+        var ol = document.querySelector('ol');
         var xhr = new XMLHttpRequest();
         xhr.open('get', 'http://baconipsum.com/api/?type=all-meat&paras=10&start-with-lorem=0');
         xhr.onload = function (e) {
           var response = JSON.parse(this.response);
           response.forEach(function (para) {
-            var p = document.createElement('p');
-            p.appendChild(document.createTextNode(response[0]));
-            document.body.appendChild(p);
+            var li = document.createElement('li');
+            li.appendChild(document.createTextNode(para));
+            ol.appendChild(li);
           });
         };
         xhr.send();
+      }
+
+      function countParagraphs() {
+        var count = document.querySelectorAll('li').length;
+        document.getElementById('numberOfParagraphs').innerText = count + ' paragraphs';
       }
     </script>
   </head>
@@ -37,25 +68,85 @@
   <body style="max-width: 30em;" onload='onLoad()'>
     <h1>Lorem ipsum dolor sit amet</h1>
     <p>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed mi vel sem viverra molestie eget et ipsum. Quisque vitae tortor ut sapien eleifend ornare. Nulla at odio commodo justo finibus commodo. Suspendisse sagittis in dui venenatis bibendum. Ut at convallis diam. Aenean accumsan sagittis nulla nec commodo. Nullam imperdiet sodales sem eu ultrices.
+      <strong>
+        The page will be scrolled down to trigger infinite scroll three times, then will scroll back to top. The
+        page intially has 10 paragraphs and each load will add 10 more paragraphs, for a total of 40 paragraphs.
+      </strong>
     </p>
     <p>
-      In in porttitor purus. Nam consequat magna tortor, id euismod felis fringilla sed. Mauris placerat nunc diam, in dictum elit tincidunt ac. Proin hendrerit imperdiet porta. Proin laoreet rutrum tempus. Cras felis risus, sagittis ut lectus non, aliquet elementum augue. Donec vitae tempus leo. Aliquam ut lacinia magna. Vestibulum mollis arcu id maximus venenatis.
+      <button onclick='countParagraphs()'>Count Paragraphs</button>
+      <span id='numberOfParagraphs'></span>
     </p>
-    <p>
-      Nulla feugiat urna nec ligula scelerisque porta. Etiam hendrerit ipsum nec tristique dictum. Morbi in tempor urna. Sed in risus mattis, commodo urna at, ultrices ex. Cras mollis nec velit eget lacinia. Mauris non quam tortor. Maecenas lectus tellus, tempor et nisi a, vehicula mollis leo. Nullam augue mi, dictum vulputate suscipit eu, placerat ac massa. Donec mattis nisl mattis enim venenatis porta. Nunc feugiat, tortor nec dignissim elementum, massa purus viverra ante, at luctus neque sapien vitae turpis. Donec accumsan, ligula id maximus hendrerit, dui purus consequat neque, malesuada lacinia erat turpis non justo.
-    </p>
-    <p>
-      Suspendisse potenti. Phasellus eget pharetra quam. Nam ultricies semper augue quis hendrerit. Curabitur quis erat vel leo ornare congue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Morbi congue nibh eu arcu consequat aliquet. Curabitur auctor enim velit, eget rutrum mi accumsan at. Cras sagittis leo nec massa viverra, vitae lobortis augue iaculis. Maecenas tempus eget dolor id blandit. Integer feugiat nibh feugiat purus pretium, ut aliquet purus dignissim. Vestibulum ut ligula ac massa ornare pulvinar. Ut convallis vel lacus sed malesuada. Suspendisse vel bibendum sem, in ornare lacus. Integer fringilla ipsum ut quam hendrerit, ac mattis libero varius. Quisque vestibulum felis et ante mattis feugiat. Aliquam erat volutpat.
-    </p>
-    <p>
-      Phasellus malesuada, erat id gravida ultrices, ligula quam faucibus ante, vel pulvinar dui ex sit amet nisi. Mauris nec arcu vel enim semper sollicitudin. Ut sollicitudin massa non blandit placerat. Nam dignissim mauris malesuada blandit sollicitudin. Aenean vitae laoreet ipsum. Nulla viverra accumsan lacus in consectetur. Integer laoreet pharetra sapien, at pulvinar quam ornare in. Curabitur scelerisque mollis enim et tristique. Donec sed augue enim. Donec vitae facilisis sapien.
-    </p>
-    <p>
-      Aliquam sit amet sollicitudin erat. Morbi luctus, neque id eleifend cursus, tellus nulla fermentum lorem, at tincidunt odio quam eget massa. Etiam purus lacus, pharetra sed ipsum sed, egestas tempor elit. Maecenas eleifend turpis augue, non egestas tortor tincidunt vel. Morbi dapibus scelerisque sapien, ut interdum sem sollicitudin quis. Maecenas eget justo vel eros rhoncus luctus. Donec lectus lorem, tempus vel consequat ut, ornare ac nisi. Donec velit nisi, tincidunt vitae venenatis ac, porta eget massa.
-    </p>
-    <p>
-      Etiam eleifend molestie sapien in ultrices. Morbi pulvinar eget ligula tempor vestibulum. Morbi nec nunc varius, luctus neque sed, efficitur lectus. Etiam ac diam ultricies, vestibulum mi varius, consectetur elit. Duis eget ante lacinia, porta eros sit amet, iaculis nibh. Cras euismod et enim et semper. Morbi libero nibh, iaculis vitae porta non, scelerisque a augue.
-    </p>
+    <ol>
+      <li>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed mi vel sem viverra molestie eget et ipsum.
+        Quisque vitae tortor ut sapien eleifend ornare. Nulla at odio commodo justo finibus commodo. Suspendisse sagittis
+        in dui venenatis bibendum. Ut at convallis diam. Aenean accumsan sagittis nulla nec commodo. Nullam imperdiet
+        sodales sem eu ultrices.
+      </li>
+      <li>
+        In in porttitor purus. Nam consequat magna tortor, id euismod felis fringilla sed. Mauris placerat nunc diam, in
+        dictum elit tincidunt ac. Proin hendrerit imperdiet porta. Proin laoreet rutrum tempus. Cras felis risus, sagittis
+        ut lectus non, aliquet elementum augue. Donec vitae tempus leo. Aliquam ut lacinia magna. Vestibulum mollis arcu
+        id maximus venenatis.
+      </li>
+      <li>
+        Nulla feugiat urna nec ligula scelerisque porta. Etiam hendrerit ipsum nec tristique dictum. Morbi in tempor urna.
+        Sed in risus mattis, commodo urna at, ultrices ex. Cras mollis nec velit eget lacinia. Mauris non quam tortor.
+        Maecenas lectus tellus, tempor et nisi a, vehicula mollis leo. Nullam augue mi, dictum vulputate suscipit eu,
+        placerat ac massa. Donec mattis nisl mattis enim venenatis porta. Nunc feugiat, tortor nec dignissim elementum,
+        massa purus viverra ante, at luctus neque sapien vitae turpis. Donec accumsan, ligula id maximus hendrerit, dui
+        purus consequat neque, malesuada lacinia erat turpis non justo.
+      </li>
+      <li>
+        Suspendisse potenti. Phasellus eget pharetra quam. Nam ultricies semper augue quis hendrerit. Curabitur quis erat
+        vel leo ornare congue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis
+        egestas. Morbi congue nibh eu arcu consequat aliquet. Curabitur auctor enim velit, eget rutrum mi accumsan at.
+        Cras sagittis leo nec massa viverra, vitae lobortis augue iaculis. Maecenas tempus eget dolor id blandit. Integer
+        feugiat nibh feugiat purus pretium, ut aliquet purus dignissim. Vestibulum ut ligula ac massa ornare pulvinar. Ut
+        convallis vel lacus sed malesuada. Suspendisse vel bibendum sem, in ornare lacus. Integer fringilla ipsum ut quam
+        hendrerit, ac mattis libero varius. Quisque vestibulum felis et ante mattis feugiat. Aliquam erat volutpat.
+      </li>
+      <li>
+        Phasellus malesuada, erat id gravida ultrices, ligula quam faucibus ante, vel pulvinar dui ex sit amet nisi.
+        Mauris nec arcu vel enim semper sollicitudin. Ut sollicitudin massa non blandit placerat. Nam dignissim mauris
+        malesuada blandit sollicitudin. Aenean vitae laoreet ipsum. Nulla viverra accumsan lacus in consectetur. Integer
+        laoreet pharetra sapien, at pulvinar quam ornare in. Curabitur scelerisque mollis enim et tristique. Donec sed
+        augue enim. Donec vitae facilisis sapien.
+      </li>
+      <li>
+        Aliquam sit amet sollicitudin erat. Morbi luctus, neque id eleifend cursus, tellus nulla fermentum lorem, at
+        tincidunt odio quam eget massa. Etiam purus lacus, pharetra sed ipsum sed, egestas tempor elit. Maecenas eleifend
+        turpis augue, non egestas tortor tincidunt vel. Morbi dapibus scelerisque sapien, ut interdum sem sollicitudin
+        quis. Maecenas eget justo vel eros rhoncus luctus. Donec lectus lorem, tempus vel consequat ut, ornare ac nisi.
+        Donec velit nisi, tincidunt vitae venenatis ac, porta eget massa.
+      </li>
+      <li>
+        Etiam eleifend molestie sapien in ultrices. Morbi pulvinar eget ligula tempor vestibulum. Morbi nec nunc varius,
+        luctus neque sed, efficitur lectus. Etiam ac diam ultricies, vestibulum mi varius, consectetur elit. Duis eget
+        ante lacinia, porta eros sit amet, iaculis nibh. Cras euismod et enim et semper. Morbi libero nibh, iaculis vitae
+        porta non, scelerisque a augue.
+      </li>
+      <li>
+        Phasellus malesuada, erat id gravida ultrices, ligula quam faucibus ante, vel pulvinar dui ex sit amet nisi.
+        Mauris nec arcu vel enim semper sollicitudin. Ut sollicitudin massa non blandit placerat. Nam dignissim mauris
+        malesuada blandit sollicitudin. Aenean vitae laoreet ipsum. Nulla viverra accumsan lacus in consectetur. Integer
+        laoreet pharetra sapien, at pulvinar quam ornare in. Curabitur scelerisque mollis enim et tristique. Donec sed
+        augue enim. Donec vitae facilisis sapien.
+      </li>
+      <li>
+        Aliquam sit amet sollicitudin erat. Morbi luctus, neque id eleifend cursus, tellus nulla fermentum lorem, at
+        tincidunt odio quam eget massa. Etiam purus lacus, pharetra sed ipsum sed, egestas tempor elit. Maecenas eleifend
+        turpis augue, non egestas tortor tincidunt vel. Morbi dapibus scelerisque sapien, ut interdum sem sollicitudin
+        quis. Maecenas eget justo vel eros rhoncus luctus. Donec lectus lorem, tempus vel consequat ut, ornare ac nisi.
+        Donec velit nisi, tincidunt vitae venenatis ac, porta eget massa.
+      </li>
+      <li>
+        Etiam eleifend molestie sapien in ultrices. Morbi pulvinar eget ligula tempor vestibulum. Morbi nec nunc varius,
+        luctus neque sed, efficitur lectus. Etiam ac diam ultricies, vestibulum mi varius, consectetur elit. Duis eget
+        ante lacinia, porta eros sit amet, iaculis nibh. Cras euismod et enim et semper. Morbi libero nibh, iaculis vitae
+        porta non, scelerisque a augue.
+      </li>
+    </ol>
   </body>
 </html>
