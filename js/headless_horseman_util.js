@@ -6,8 +6,10 @@
     var _HH_PROPERTY = '__headless_horseman__';
 
     // Calling window.scrollTo() too quickly doesn't seem to work well,
-    // therefore all of our scrolling APIs introduce a small delay.
-    var _SCROLL_DELAY_MS = 100;
+    // therefore all of our scrolling APIs introduce a small delay. I
+    // picked this value experimentally by messing around with Twitter
+    // and dontsellbodies.org.
+    var _SCROLL_DELAY_MS = 1000;
 
     // True if addEventListener() has already been patched.
     var _addEventListenerIsPatched = false;
@@ -32,46 +34,61 @@
     // True if XHR.send() has already been patched.
     var _xhrSendIsPatched = false;
 
-    // Run a callback in the next tick.
-    function _callOnNextTick(callback) {
-        setTimeout(callback, 0);
+    // Return true if it looks like clicking this element triggers an XHR.
+    // This is a very rough heuristic.
+    // TODO: Fine tune based on real world sites.
+    function clickLikelyTriggersXhr(element) {
+        var regex = /(more|load)/i;
+
+        return element.tagName == 'A' && element.innerText.match(regex);
     }
 
-    // Click on elements that look like they might trigger an XHR.
+    // Click on an element that looks like it might trigger an XHR.
     // Returns a promise.
-    function clickXhrElements() {
-        var p = new _Promise();
+    function clickXhrElement() {
+        var p = new Promise();
         var elements = findElementsWithListener('click');
         var currentElement = 0;
+        var okAttribute = _HH_PROPERTY + 'clickChecked';
+        var found = false;
 
         // Iterate through elements looking for one that might trigger
         // an XHR.
-        while (!_likelyTriggersXHR(elements[currentElement])) {
-            currentElement++;
+        for (var index in elements) {
+            var element = elements[index];
 
-            if (currentElement >= elements.length) {
-                p.resolve();
-                return p;
+            if (!element.hasAttribute(okAttribute) && clickLikelyTriggersXhr(element)) {
+                found = true;
             }
+
+            element.setAttribute(okAttribute, 'ok');
+
+            if (found) {
+                break;
+            }
+        }
+
+        if (!found) {
+            debugLog('clickXhrElement: No elements found to click on.')
+            p.resolve();
+            return p;
         }
 
         if (_visual) {
             // Scroll so that element is visible before clicking.
-            var el = elements[currentElement];
-            var elTop = el.offsetTop - el.scrollTop + el.clientTop;
+            var elTop = element.offsetTop - element.scrollTop + element.clientTop;
             window.scrollTo(0, elTop);
         }
 
-        // Now we have a clickable element: click it and wait for the
-        // XHR to finish.
-        p.resolve(whenXhrFinished());
-        _trigger('click', elements[currentElement]);
+        // Now we have a clickable element.
+        p.resolve();
+        trigger('click', element);
 
         return p;
     }
 
     // Write to the console log if debug mode is enabled.
-    function _debugLog() {
+    function debugLog() {
         if (_debug) {
             console.log.apply(console, arguments);
         }
@@ -80,16 +97,17 @@
     // Return an array of elements that have event listeners for the
     // specified eventName, e.g. 'click'.
     function findElementsWithListener(eventName) {
-        var registeredListeners = [];
+        var registeredListeners;
+        var attributeListeners;
 
         // Check the registry for listeners.
         if (_elementsWithListeners.hasOwnProperty(eventName)) {
-            Object.keys(_elementsWithListeners[eventName]).forEach(function (key) {
-                registeredListeners.push(_elementsWithListeners[eventName][key])
-            });
+            registeredListeners = _elementsWithListeners[eventName];
+        } else {
+            registeredListeners = [];
         }
 
-        _debugLog('Found ' + registeredListeners.length +
+        debugLog('Found ' + registeredListeners.length +
                   ' listeners in the registry for ' + eventName + 'event.',
                   registeredListeners);
 
@@ -98,7 +116,7 @@
             document.querySelectorAll(eventAttributeName)
         );
 
-        _debugLog('Found ' + attributeListeners.length +
+        debugLog('Found ' + attributeListeners.length +
                   ' attribute listeners for ' + eventName + 'event.',
                   attributeListeners);
 
@@ -107,7 +125,7 @@
 
     // Get the headless horseman property for an object, creating
     // it first, if necessary.
-    function _getHH(obj) {
+    function getHH(obj) {
         if (!obj.hasOwnProperty(_HH_PROPERTY)) {
             obj[_HH_PROPERTY] = {};
         }
@@ -115,68 +133,58 @@
         return obj[_HH_PROPERTY];
     }
 
-    // Return true if this element looks like it triggers an XHR.
+    // Return true if it looks like mousing over this element triggers an XHR.
     // This is a very rough heuristic.
-    function _likelyTriggersXHR(element) {
-        var regex = /(more|load)/i;
-
-        return element.textContent.match(regex);
+    // TODO: Fine tune based on real-world sites.
+    function mouseoverLikelyTriggersXhr(element) {
+        var classRegex = /hover/i;
+        debugLog(element.className);
+        if (element.hasAttribute('data-asin')) debugLog(element.getAttribute('data-asin'));
+        return element.className.match(classRegex);
     }
 
-    // Click on anchor elements that look like they might trigger an XHR.
+    // Mouseover an element that might trigger an XHR.
     // Returns a promise.
-    function clickXhrElements() {
-        var p = new _Promise();
-        var elements = findElementsWithListener('click');
+    function mouseoverXhrElement() {
+        var p = new Promise();
+        var elements = findElementsWithListener('mouseover');
         var currentElement = 0;
+        var okAttribute = _HH_PROPERTY + 'mouseoverChecked';
+        var found = false;
 
         // Iterate through elements looking for one that might trigger
         // an XHR.
-        while (!_likelyTriggersXHR(elements[currentElement])) {
-            currentElement++;
+        for (var index in elements) {
+            var element = elements[index];
 
-            if (currentElement >= elements.length) {
-                p.resolve();
-                return p;
+            if (!element.hasAttribute(okAttribute) && mouseoverLikelyTriggersXhr(element)) {
+                found = true;
             }
+
+            element.setAttribute(okAttribute, 'ok');
+
+            if (found) {
+                break;
+            }
+        }
+
+        if (!found) {
+            debugLog('clickXhrElement: No elements found to mouseover.')
+            p.resolve();
+            return p;
         }
 
         if (_visual) {
             // Scroll so that element is visible before clicking.
-            var el = elements[currentElement];
-            var elTop = el.offsetTop - el.scrollTop + el.clientTop;
+            var elTop = element.offsetTop - element.scrollTop + element.clientTop;
             window.scrollTo(0, elTop);
         }
 
-        // Now we have a clickable element: click it and wait for the
-        // XHR to finish.
-        p.resolve(whenXhrFinished());
-        _debugLog('Clicking on', elements[currentElement]);
-        _trigger('click', elements[currentElement]);
+        // Now we have a mouserover-able element.
+        debugLog('Mousing over', element);
+        trigger('mouseover', element);
 
-        return p;
-    }
-
-    // Mouse over elements that have mouseover event handlers.
-    // Returns a promise.
-    function mouseoverElements() {
-        var p = new _Promise();
-        var elements = findElementsWithListener('mouseover');
-        var currentElement = 0;
-
-        elements.forEach(function (element) {
-            if (_visual) {
-                // Scroll so that element is visible before mouseover.
-                var elTop = element.offsetTop - element.scrollTop + element.clientTop;
-                window.scrollTo(0, elTop);
-            }
-
-            // Now we have a mouserover-able element.
-            _debugLog('Mousing over', element);
-            _trigger('mouseover', element);
-        });
-
-        p.resolve();
+        p.resolve()
         return p;
     }
 
@@ -190,22 +198,22 @@
     // well as in a global registry.
     function patchAddEventListener() {
         if (_addEventListenerIsPatched) {
-            _debugLog('patchAddEventListener: addEventListener is already patched.');
+            debugLog('patchAddEventListener: addEventListener is already patched.');
             return;
         }
 
-        _debugLog('Patching addEventListener.');
+        debugLog('Patching addEventListener.');
 
-        var prototypeSplash = _getHH(Element.prototype);
+        var prototypeSplash = getHH(Element.prototype);
         prototypeSplash.oldAddEventListener = Element.prototype.addEventListener;
 
         Element.prototype.addEventListener = function(eventType, listener, useCapture) {
-            _debugLog('patchAddEventListener: addEventListener called.\nelement: ', this,
+            debugLog('patchAddEventListener: addEventListener called.\nelement: ', this,
                       '\neventType: ', eventType,
                       '\nlistener: ', listener,
                       '\nuseCapture: ', useCapture);
 
-            var thisSplash = _getHH(this);
+            var thisSplash = getHH(this);
 
             // Register this event on the element itself.
             if (!thisSplash.hasOwnProperty('eventListeners')) {
@@ -220,10 +228,13 @@
 
             // Register this event in the registry.
             if (!_elementsWithListeners.hasOwnProperty(eventType)) {
-                _elementsWithListeners[eventType] = {};
+                _elementsWithListeners[eventType] = [];
             }
 
-            _elementsWithListeners[eventType][this] = this; // Hash used as a set.
+            // TODO: Elements with multiple listeners will be pushed on this
+            // list multiple times, but I'm not aware of any more efficient
+            // data structure to do this.
+            _elementsWithListeners[eventType].push(this)
 
             // Finally, call the patched function.
             args = [eventType, listener, useCapture];
@@ -240,20 +251,20 @@
             return;
         }
 
-        var prototypeSplash = _getHH(XMLHttpRequest.prototype);
+        var prototypeSplash = getHH(XMLHttpRequest.prototype);
         prototypeSplash.oldXhrSend = XMLHttpRequest.prototype.send;
 
         XMLHttpRequest.prototype.send = function(body) {
             var self = this;
             var oldOnLoad;
 
-            _debugLog('patchXhrSend: Intercepted XHR send\nbody: ',body);
+            debugLog('patchXhrSend: Intercepted XHR send\nbody: ',body);
             window.dispatchEvent(new Event(_xhrInterceptedEvent));
 
             oldOnLoad = this.onload;
 
             this.onload = function() {
-                _debugLog('patchXhrSend: XHR onLoad was called.')
+                debugLog('patchXhrSend: XHR onLoad was called.')
 
                 window.dispatchEvent(new Event(_xhrFinishedEvent));
 
@@ -265,7 +276,7 @@
             oldOnError = this.onerror;
 
             this.onerror = function() {
-                _debugLog('patchXhrSend: XHR onError was called.')
+                debugLog('patchXhrSend: XHR onError was called.')
 
                 window.dispatchEvent(new Event(_xhrFinishedEvent));
 
@@ -305,7 +316,7 @@
             }
         }
 
-        _debugLog('Scroll to (' + x + ', ' + y + ')', el);
+        debugLog('Scroll to (' + x + ', ' + y + ')', el);
 
         if (el === window) {
             window.scrollTo(x, y);
@@ -352,7 +363,7 @@
                     divZIndex > baseZIndex &&
                     divArea > areaThreshold) {
 
-                    _debugLog('Div looks like an overlay: div z-index(' +
+                    debugLog('Div looks like an overlay: div z-index(' +
                               divZIndex + ') > windox z-index(' +
                               baseZIndex + ') and div area(' +
                               divArea + ') > threshold(' +
@@ -367,7 +378,7 @@
     }
 
     // Simulate an event on an element.
-    function _trigger(eventName, element) {
+    function trigger(eventName, element) {
         var attributeName = 'on' + eventName;
         var event = new Event(eventName);
 
@@ -381,7 +392,7 @@
     // Delay for a period of time. Returns a promise that is resolved
     // when the delay has expired.
     function wait(milliseconds) {
-        var p = new _Promise();
+        var p = new Promise();
 
         setTimeout(function () {p.resolve()}, milliseconds);
 
@@ -391,20 +402,20 @@
     // Returns a promise that is resolved when all of the arguments
     // are resolved.
     function whenAll() {
-        var p = new _Promise();
+        var p = new Promise();
         var dependencies = Array.prototype.slice.call(arguments);
         var promisedCount = dependencies.length;
         var resolvedCount = 0;
 
-        _debugLog("whenAll: has " + promisedCount + "dependencies.");
+        debugLog("whenAll: has " + promisedCount + " dependencies.");
 
         dependencies.forEach(function (dependency) {
             dependency.then(function () {
                 resolvedCount++;
-                _debugLog("whenAll: resolvedCount is " + resolvedCount + ".");
+                debugLog("whenAll: resolvedCount is " + resolvedCount + ".");
 
                 if (resolvedCount === promisedCount) {
-                    _debugLog("whenAll: resolved.");
+                    debugLog("whenAll: resolved.");
                     p.resolve();
                 }
             });
@@ -425,10 +436,10 @@
     //
     // Returns a promise.
     function whenXhrFinished(timeoutBeforeMs, timeoutAfterMs) {
-        var p = new _Promise();
+        var p = new Promise();
 
         var timeoutBeforeMs = timeoutBeforeMs || 10;
-        var timeoutAfterMs = timeoutAfterMs || 2000;
+        var timeoutAfterMs = timeoutAfterMs || 2500;
 
         var xhrInterceptedCount = 0;
         var xhrFinishedCount = 0;
@@ -437,27 +448,27 @@
         var timerBeforeFired = false;
         var timerAfter;
 
-        function finished() {
+        function finished(intercepted) {
             xhrInterceptedCount = xhrFinishedCount = 0;
             window.removeEventListener(_xhrInterceptedEvent, interceptedXhr);
             window.removeEventListener(_xhrFinishedEvent, finishedXhr);
             clearTimeout(timerBefore);
             clearTimeout(timerAfter);
-            p.resolve();
+            p.resolve(intercepted ? 'true' : 'false');
         }
 
         function interceptedXhr(e) {
             xhrInterceptedCount++;
-            _debugLog('whenXhrFinished: intercept count = ', xhrInterceptedCount);
+            debugLog('whenXhrFinished: intercept count = ', xhrInterceptedCount);
         };
 
         function finishedXhr(e) {
             xhrFinishedCount++;
-            _debugLog('whenXhrFinished: finished count = ', xhrFinishedCount);
+            debugLog('whenXhrFinished: finished count = ', xhrFinishedCount);
 
             if (timerBeforeFired && xhrInterceptedCount == xhrFinishedCount) {
-                _debugLog('whenXhrFinished: all XHRs finished');
-                finished();
+                debugLog('whenXhrFinished: all XHRs finished');
+                finished(true);
             }
         }
 
@@ -471,16 +482,17 @@
             // timer fired:
             if (xhrInterceptedCount === xhrFinishedCount) {
                 if (xhrInterceptedCount === 0) {
-                    _debugLog('whenXhrFinished: no XHRs sent before "beforeTimeout"');
+                    debugLog('whenXhrFinished: no XHRs sent before "beforeTimeout"');
+                    finished(false);
                 } else {
-                    _debugLog('whenXhrFinished: all XHRs finished before "beforeTimeout"');
+                    debugLog('whenXhrFinished: all XHRs finished before "beforeTimeout"');
+                    finished(true);
                 }
-                finished();
             }
         }, timeoutBeforeMs);
 
         timerAfter = setTimeout(function () {
-            _debugLog('whenXhrFinished: timed out waiting for XHRs to to finished');
+            debugLog('whenXhrFinished: timed out waiting for XHRs to to finished');
             finished();
         }, timeoutAfterMs);
 
@@ -492,7 +504,7 @@
     // keep our callback hell to a minimum, especially for things like
     // scrolling that need to introduce some delay or run callbacks on the
     // next tick.
-    function _Promise() {
+    function Promise() {
         this.isResolved = false;
         this.value = undefined;
         this.callbacks = [];
@@ -500,8 +512,8 @@
 
     // When a promise is resolved, run a callback. This returns a promise
     // so that a series of events can easily be chained together.
-    _Promise.prototype.then = function (callback) {
-        var p = new _Promise();
+    Promise.prototype.then = function (callback) {
+        var p = new Promise();
 
         if (this.isResolved) {
             p.resolve(callback(this.value));
@@ -518,10 +530,10 @@
     // If it's a concrete value, then all of the callbacks are executed.
     // If it's another promise, then this promise is set to resolve when
     // the other promise resolves.
-    _Promise.prototype.resolve = function (value) {
+    Promise.prototype.resolve = function (value) {
         var self = this;
 
-        if (value instanceof _Promise) {
+        if (value instanceof Promise) {
             value.then(function (nestedValue) {
                 self.resolve(nestedValue);
             });
@@ -537,11 +549,19 @@
         }
     }
 
+    // Apply patches.
+    patchAddEventListener();
+    patchXhrSend();
+
     // Export public functions.
     window[_HH_PROPERTY] = {
-        'clickXhrElements': clickXhrElements,
+        'clickLikelyTriggersXhr': clickLikelyTriggersXhr,
+        'clickXhrElement': clickXhrElement,
+        'debugLog': debugLog,
         'findElementsWithListener': findElementsWithListener,
-        'mouseoverElements': mouseoverElements,
+        'getHH': getHH,
+        'mouseoverLikelyTriggersXhr': mouseoverLikelyTriggersXhr,
+        'mouseoverXhrElement': mouseoverXhrElement,
         'nextTick': nextTick,
         'patchAddEventListener': patchAddEventListener,
         'patchXhrSend': patchXhrSend,
@@ -549,6 +569,7 @@
         'setDebug': setDebug,
         'setVisual': setVisual,
         'startOverlayWatcher': startOverlayWatcher,
+        'trigger': trigger,
         'wait': wait,
         'whenAll': whenAll,
         'whenXhrFinished': whenXhrFinished

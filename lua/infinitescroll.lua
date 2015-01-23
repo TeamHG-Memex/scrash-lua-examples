@@ -1,19 +1,11 @@
 --[[
 python demo.py https://twitter.com/cnn \
                lua/infinitescroll.lua \
-               js/zepto.js \
-               js/wait-for-ajax.js \
-               js/close-overlay.js \
-               js/scroll.js \
-               js/infinitescroll.js
+               js/headless_horseman_util.js
 
-python demo.py http://dontsellbodies.org/ \
+python demo.py http://dontsellbodies.org \
                lua/infinitescroll.lua \
-               js/zepto.js \
-               js/wait-for-ajax.js \
-               js/close-overlay.js \
-               js/scroll.js \
-               js/infinitescroll.js
+               js/headless_horseman_util.js
 ]]
 
 function main(splash)
@@ -21,20 +13,32 @@ function main(splash)
   local page_count = splash.args.page_count or 3
 
   splash:autoload(splash.args.js_source)
+
   assert(splash:go(url))
-  splash:runjs_async("Zepto(function () {lua_resume()});")
 
   for i=1,page_count do
-    print(splash:runjs_async("window.__splash__.scrollBottomXhr(lua_resume);"))
+    splash:runjs_async([[
+      __headless_horseman__.setDebug(true);
+      __headless_horseman__.setVisual(true);
+      __headless_horseman__.startOverlayWatcher();
+
+      __headless_horseman__.whenAll(
+        __headless_horseman__.whenXhrFinished(),
+        __headless_horseman__.scroll(window, 'left', 'bottom')
+      ).then(luaResume);
+    ]])
   end
 
-  splash:runjs("window.__splash__.scrollTop();")
+  splash:runjs_async([[
+    __headless_horseman__.scroll(window, 'left', 'top').then(luaResume);
+  ]])
+
   splash:stop()
   splash:set_viewport("full")
 
   return {
     html = splash:html(),
-    png = splash:png{width=640},
+    png = splash:png{width=800},
     har = splash:har(),
   }
 end

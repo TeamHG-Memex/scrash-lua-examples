@@ -17,7 +17,10 @@
         HH.wait(1000)
           .then(function () {
             console.log("Going to mouseover elements.");
-            HH.mouseoverElements()
+            return HH.whenAll(
+              HH.mouseoverXhrElement(),
+              HH.mouseoverXhrElement()
+            );
           })
           .then(function () {
             console.log("Finished mouseover elements.");
@@ -44,11 +47,11 @@
       </strong>
     </p>
     <p>
-      <a href="#" onmouseover='show(1)' onmouseout='hide(1)'>I have an onmouseover attribute.</a>
+      <a href="#" class='i-can-hover' onmouseover='show(1)' onmouseout='hide(1)'>I have an onmouseover attribute.</a>
       <span id='hidden1' style='visibility: hidden;'>HIDDEN TEXT #1.</span>
     </p>
     <p>
-      <a id='attach-me' href="#">I have an attached event handler.</a>
+      <a id='attach-me' class='i-can-hover' href="#">I have an attached event handler.</a>
       <span id='hidden2' style='visibility: hidden;'> HIDDEN TEXT #2.</span>
     </p>
   </body>

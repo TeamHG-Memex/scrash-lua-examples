@@ -26,7 +26,7 @@ function main(splash)
 
   return {
     html = splash:html(),
-    png = splash:png{width=640},
+    png = splash:png{width=800},
     har = splash:har(),
   }
 end
