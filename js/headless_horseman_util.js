@@ -65,21 +65,9 @@
         // Now we have a clickable element: click it and wait for the
         // XHR to finish.
         p.resolve(whenXhrFinished());
-        _trigger('click', elements[currentElement++]);
+        _trigger('click', elements[currentElement]);
 
         return p;
-    }
-
-    // Close an overlay that obscures page contents. This selector
-    // works for Twitter and dontsellbodies.org, but obviously it
-    // doesn't generalize very well...
-    function closeOverlay() {
-        window.setInterval(function () {
-            var els = document.querySelectorAll('button.modal-close,div.fancybox-close');
-            els.forEach(function (el) {
-                _trigger('click', el);
-            });
-        }, 1000);
     }
 
     // Write to the console log if debug mode is enabled.
@@ -339,6 +327,45 @@
         _visual = enabled;
     }
 
+    // Close an overlay that obscures page contents. This is a rough heuristic.
+    // It's based on having a high z-index and covering a lot of the screen.
+    //
+    // To do: there may be better heuristics. We could compute a weighted
+    // average of z-indexes, take opacity into account, etc. Let's see how
+    // this works in practice and start building up a list of real sites
+    // that have overlays.
+    function startOverlayWatcher() {
+        setInterval(function () {
+            var baseZIndex = window.getComputedStyle(document.documentElement).zIndex;
+            var areaThreshold = window.innerHeight * window.innerWidth * 0.33;
+            var okAttribute = _HH_PROPERTY + 'overlayChecked';
+
+            var divs = Array.prototype.slice.call(
+                document.querySelectorAll('div:not([' + okAttribute + '])')
+            );
+
+            divs.forEach(function (div) {
+                var divZIndex = window.getComputedStyle(div).zIndex;
+                var divArea = div.scrollHeight * div.scrollWidth;
+
+                if (divZIndex != 'auto' &&
+                    divZIndex > baseZIndex &&
+                    divArea > areaThreshold) {
+
+                    _debugLog('Div looks like an overlay: div z-index(' +
+                              divZIndex + ') > windox z-index(' +
+                              baseZIndex + ') and div area(' +
+                              divArea + ') > threshold(' +
+                              areaThreshold + ').');
+
+                    div.parentNode.removeChild(div);
+                } else {
+                    div.setAttribute(okAttribute, 'ok');
+                }
+            });
+        }, 1000);
+    }
+
     // Simulate an event on an element.
     function _trigger(eventName, element) {
         var attributeName = 'on' + eventName;
@@ -410,7 +437,7 @@
         var timerBeforeFired = false;
         var timerAfter;
 
-        function _finished() {
+        function finished() {
             xhrInterceptedCount = xhrFinishedCount = 0;
             window.removeEventListener(_xhrInterceptedEvent, interceptedXhr);
             window.removeEventListener(_xhrFinishedEvent, finishedXhr);
@@ -430,7 +457,7 @@
 
             if (timerBeforeFired && xhrInterceptedCount == xhrFinishedCount) {
                 _debugLog('whenXhrFinished: all XHRs finished');
-                _finished();
+                finished();
             }
         }
 
@@ -448,13 +475,13 @@
                 } else {
                     _debugLog('whenXhrFinished: all XHRs finished before "beforeTimeout"');
                 }
-                _finished();
+                finished();
             }
         }, timeoutBeforeMs);
 
         timerAfter = setTimeout(function () {
             _debugLog('whenXhrFinished: timed out waiting for XHRs to to finished');
-            _finished();
+            finished();
         }, timeoutAfterMs);
 
         return p;
@@ -513,7 +540,6 @@
     // Export public functions.
     window[_HH_PROPERTY] = {
         'clickXhrElements': clickXhrElements,
-        'closeOverlay': closeOverlay,
         'findElementsWithListener': findElementsWithListener,
         'mouseoverElements': mouseoverElements,
         'nextTick': nextTick,
@@ -522,6 +548,7 @@
         'scroll': scroll,
         'setDebug': setDebug,
         'setVisual': setVisual,
+        'startOverlayWatcher': startOverlayWatcher,
         'wait': wait,
         'whenAll': whenAll,
         'whenXhrFinished': whenXhrFinished
