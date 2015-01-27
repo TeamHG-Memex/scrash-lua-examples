@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>HH - Infinite Scroll XHR</title>
+    <title>HH - The Works</title>
     <script src="../js/headless_horseman_util.js"></script>
     <style>
       li {
@@ -11,52 +11,81 @@
     <script>
       HH = __headless_horseman__
       HH.setDebug(true);
-      HH.patchAddEventListener();
-      HH.patchXhrSend();
+      HH.patchAll();
+      HH.startOverlayWatcher();
 
       function onLoad() {
         window.addEventListener('scroll', function (e) {
           if (document.body.scrollTop + window.innerHeight >= document.body.scrollHeight) {
-            loadMore();
+            infiniteScroll();
           }
         });
 
-        HH.nextTick()
-          .then(HH.debugLog, "About to scroll.")
-          .then(function () {
-            return HH.whenAll(HH.whenXhrFinished(), HH.scroll(window, 0, 'bottom'))
-          })
-          .then(HH.debugLog, "Scrolled to bottom one time.")
-          .then(function () {
-            return HH.whenAll(HH.whenXhrFinished(), HH.scroll(window, 0, 'bottom'))
-          })
-          .then(HH.debugLog, "Scrolled to bottom two times.")
-          .then(function () {
-            return HH.whenAll(HH.whenXhrFinished(), HH.scroll(window, 0, 'bottom'))
-          })
-          .then(HH.debugLog, "Scrolled to bottom three times.")
-          .then(HH.scroll, window, 0, 'top')
-          .then(HH.debugLog, "Scrolled back up to top.");
+        setTimeout(makeOverlay, 4321);
+
+        // Run the HH directives:
+        HH.when(HH.debugLog, "Giving it the works...")
+          .then(HH.wait, 1500)
+          .then(HH.tryInfiniteScroll, 3)
+          .then(HH.tryClickXhr, 3)
+          .then(HH.tryMouseoverXhr, 3)
+          .then(HH.scroll, window, 'left', 'top')
+          .then(HH.debugLog, "Finished the works.");
       }
 
-      function loadMore() {
+      function replaceXhr(anchorEl) {
+        getParagraphs(1, function (paragraphs) {
+          var p = anchorEl.parentNode;
+          p.removeChild(anchorEl);
+          p.appendChild(document.createTextNode(paragraphs[0]));
+        });
+      }
+
+      function infiniteScroll() {
         var ol = document.querySelector('ol');
-        var xhr = new XMLHttpRequest();
-        xhr.open('get', 'http://baconipsum.com/api/?type=all-meat&paras=10&start-with-lorem=0');
-        xhr.onload = function (e) {
-          var response = JSON.parse(this.response);
-          response.forEach(function (para) {
+        getParagraphs(10, function (paragraphs) {
+          paragraphs.forEach(function (paragraph) {
             var li = document.createElement('li');
-            li.appendChild(document.createTextNode(para));
+            li.appendChild(document.createTextNode(paragraph));
             ol.appendChild(li);
           });
-        };
+        });
+      }
+
+      function getParagraphs(n, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('get', 'http://baconipsum.com/api/?type=all-meat&paras=' + n + '&start-with-lorem=0');
+        xhr.onload = function (e) {
+          var paragraphs = JSON.parse(this.response);
+          callback(paragraphs);
+        }
         xhr.send();
       }
 
-      function countParagraphs() {
-        var count = document.querySelectorAll('li').length;
-        document.getElementById('numberOfParagraphs').innerText = count + ' paragraphs';
+      function makeOverlay() {
+        if (document.getElementById('overlay')) {
+          return;
+        }
+
+        var overlay = document.createElement('div');
+        overlay.id = 'overlay';
+        overlay.style.position = 'absolute';
+        overlay.style.left = '100px';
+        overlay.style.right = '100px';
+        overlay.style.top = '100px';
+        overlay.style.bottom = '100px';
+        overlay.style.backgroundColor = 'black';
+        overlay.style.opacity = 0.8;
+        overlay.style.zIndex = 1;
+
+        overlay.innerText = 'THIS IS AN OVERLAY!'
+        overlay.style.color = 'white';
+        overlay.style.fontSize = '48pt';
+        overlay.style.fontWeight = 'bold';
+        overlay.style.textAlign = 'center';
+        overlay.style.paddingTop = '80px';
+
+        document.body.appendChild(overlay);
       }
     </script>
   </head>
@@ -65,13 +94,28 @@
     <h1>Infinite Scroll</h1>
     <p>
       <strong>
-        The page will be scrolled down to trigger infinite scroll three times, then will scroll back to top. The
-        page intially has 10 paragraphs and each load will add 10 more paragraphs, for a total of 40 paragraphs.
+        The page has an overlay, infinite scroll, click XHR, and a mouseover XHR. (Oh my!)
+        Headless Horseman will
+        <ul>
+          <li>scroll down 3 times to trigger XHR</li>
+          <li>scroll back to the top</li>
+          <li>close the overlay</li>
+          <li>
+            click the link in the red div, triggering an XHR. (It will look for other things to click
+            and give up when it can't find any.)
+          </li>
+          <li>
+            mouseover the link in the blue div, triggering an XHR. (It will look for other
+            things to mouse over but give up when it can't find any.)
+          </li>
+        </ul>
       </strong>
     </p>
-    <p>
-      <button onclick='countParagraphs()'>Count Paragraphs</button>
-      <span id='numberOfParagraphs'></span>
+    <p style='border: 1px solid red; float: right; margin: 0.5em; padding: 0.5em;'>
+      <a href="#" onclick='replaceXhr(this)'>Click to load.</a>
+    </p>
+    <p style='border: 1px solid blue; float: right; margin: 0.5em; padding: 0.5em;'>
+      <a href="#" class='hover' onmouseover='replaceXhr(this)'>Hover to load.</a>
     </p>
     <ol>
       <li>

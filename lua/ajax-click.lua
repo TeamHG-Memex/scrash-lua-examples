@@ -8,14 +8,18 @@ function main(splash)
   local url = splash.args.url
   local click_count = splash.args.click_count or 10
 
-  ok, reason = splash:autoload(splash.args.js_source)
+  splash:autoload(splash.args.js_source)
+  splash:autoload([[
+    __headless_horseman__.setDebug(true);
+    __headless_horseman__.setVisual(true);
+    __headless_horseman__.patchAll();
+  ]])
+
   assert(splash:go(url))
+  splash:lock_navigation()
 
   for i=1,click_count do
     splash:runjs_async([[
-      __headless_horseman__.setDebug(true);
-      __headless_horseman__.setVisual(true);
-
       __headless_horseman__.whenAll(
         __headless_horseman__.whenXhrFinished(),
         __headless_horseman__.clickXhrElement()

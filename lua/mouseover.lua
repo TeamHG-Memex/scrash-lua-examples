@@ -8,14 +8,16 @@ function main(splash)
   local url = splash.args.url
 
   splash:autoload(splash.args.js_source)
-
-  assert(splash:go(url))
-  splash:wait(3)
-
-  splash:runjs_async([[
+  splash:autoload([[
     __headless_horseman__.setDebug(true);
     __headless_horseman__.setVisual(true);
+    __headless_horseman__.patchAll();
+  ]])
 
+  assert(splash:go(url))
+  splash:lock_navigation()
+
+  splash:runjs_async([[
     __headless_horseman__.whenAll(
       __headless_horseman__.whenXhrFinished(2500, 5000),
       __headless_horseman__.mouseoverXhrElement()

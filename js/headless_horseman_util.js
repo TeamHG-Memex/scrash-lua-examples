@@ -70,7 +70,7 @@
 
         if (!found) {
             debugLog('clickXhrElement: No elements found to click on.')
-            p.resolve();
+            p.resolve(false);
             return p;
         }
 
@@ -81,7 +81,7 @@
         }
 
         // Now we have a clickable element.
-        p.resolve();
+        p.resolve(true);
         trigger('click', element);
 
         return p;
@@ -108,7 +108,7 @@
         }
 
         debugLog('Found ' + registeredListeners.length +
-                  ' listeners in the registry for ' + eventName + 'event.',
+                  ' listeners in the registry for ' + eventName + ' event.',
                   registeredListeners);
 
         eventAttributeName = '[on' + eventName + ']';
@@ -117,7 +117,7 @@
         );
 
         debugLog('Found ' + attributeListeners.length +
-                  ' attribute listeners for ' + eventName + 'event.',
+                  ' attribute listeners for ' + eventName + ' event.',
                   attributeListeners);
 
         return registeredListeners.concat(attributeListeners);
@@ -138,7 +138,7 @@
     // TODO: Fine tune based on real-world sites.
     function mouseoverLikelyTriggersXhr(element) {
         var classRegex = /hover/i;
-        debugLog(element.className);
+
         if (element.hasAttribute('data-asin')) debugLog(element.getAttribute('data-asin'));
         return element.className.match(classRegex);
     }
@@ -169,8 +169,8 @@
         }
 
         if (!found) {
-            debugLog('clickXhrElement: No elements found to mouseover.')
-            p.resolve();
+            debugLog('mouseoverXhrElement: No elements found to mouseover.')
+            p.resolve(false);
             return p;
         }
 
@@ -184,7 +184,7 @@
         debugLog('Mousing over', element);
         trigger('mouseover', element);
 
-        p.resolve()
+        p.resolve(true)
         return p;
     }
 
@@ -242,6 +242,12 @@
         }
 
         _addEventListenerIsPatched = true;
+    }
+
+    // Run all patches.
+    function patchAll() {
+        patchAddEventListener();
+        patchXhrSend();
     }
 
     // Monkey patch the XHR.send() method so that we can track when
@@ -389,12 +395,104 @@
         }
     }
 
+    // Try to trigger XHRs by clicking on elements. Will continue to click
+    // on elements until it runs out of good candidates or exceeds the max
+    // number of attempts.
+    //
+    // Returns a promise that is resolved when it is completely finished
+    // with all of its clicking.
+    function tryClickXhr(n) {
+        var p = new Promise();
+
+        whenAll(
+            whenXhrFinished(),
+            clickXhrElement()
+        ).then(function (values) {
+            var found = values[1]; // The return value from clickXhrElement()
+
+            if (found && n > 1) {
+                p.resolve(tryClickXhr(n-1));
+            } else {
+                p.resolve();
+            }
+        });
+
+        return p;
+    }
+
+    // Try to trigger an infinite scroll XHR. If successful, then repeat
+    // several more times until no XHR is trigger or you hit the max
+    // number of attempts.
+    //
+    // Returns a promise that is resolved when it is completely finished
+    // with all of its scrolling.
+    function tryInfiniteScroll(n) {
+        var p = new Promise();
+
+        whenAll(
+            whenXhrFinished(),
+            scroll(window, 'left', 'bottom')
+        ).then(function (values) {
+            var intercepted = values[0]; // The return value from whenXhrFinished()
+
+            if (intercepted && n > 1) {
+                p.resolve(tryInfiniteScroll(n-1));
+            } else {
+                p.resolve();
+            }
+        });
+
+        return p;
+    }
+
+    // Try to trigger XHRs by mousing over elements. Will continue to
+    // mouseover elements until it runs out of good candidates or exceeds
+    // the max number of attempts.
+    //
+    // Returns a promise that is resolved when it is completely finished
+    // with all of its mouseovers.
+    function tryMouseoverXhr(n) {
+        var p = new Promise();
+
+        whenAll(
+            whenXhrFinished(),
+            mouseoverXhrElement()
+        ).then(function (values) {
+            var found = values[1]; // The return value from mouseoverXhrElement()
+
+            if (found && n > 1) {
+                p.resolve(tryMouseoverXhr(n-1));
+            } else {
+                p.resolve();
+            }
+        });
+
+        return p;
+    }
+
     // Delay for a period of time. Returns a promise that is resolved
     // when the delay has expired.
     function wait(milliseconds) {
         var p = new Promise();
-
         setTimeout(function () {p.resolve()}, milliseconds);
+        return p;
+    }
+
+    // A convenience function that turns a function call into a promise.
+    // Any extra arguments are passed to the specified function. If called
+    // without any arguments, then it just returns a promise that is
+    // immediately resolved.
+    //
+    // Returns a promise.
+    function when() {
+        var p = new Promise();
+        var fn = Array.prototype.shift.apply(arguments);
+
+        if (typeof fn === 'undefined') {
+            p.resolve();
+        } else {
+            p.resolve(fn.apply(window, arguments));
+        }
 
         return p;
     }
@@ -404,19 +502,21 @@
     function whenAll() {
         var p = new Promise();
         var dependencies = Array.prototype.slice.call(arguments);
+        var values = new Array(dependencies.length);
         var promisedCount = dependencies.length;
         var resolvedCount = 0;
 
         debugLog("whenAll: has " + promisedCount + " dependencies.");
 
-        dependencies.forEach(function (dependency) {
-            dependency.then(function () {
+        dependencies.forEach(function (dependency, index) {
+            dependency.then(function (value) {
                 resolvedCount++;
+                values[index] = value;
                 debugLog("whenAll: resolvedCount is " + resolvedCount + ".");
 
                 if (resolvedCount === promisedCount) {
                     debugLog("whenAll: resolved.");
-                    p.resolve();
+                    p.resolve(values);
                 }
             });
         });
@@ -454,7 +554,7 @@
             window.removeEventListener(_xhrFinishedEvent, finishedXhr);
             clearTimeout(timerBefore);
             clearTimeout(timerAfter);
-            p.resolve(intercepted ? 'true' : 'false');
+            p.resolve(intercepted);
         }
 
         function interceptedXhr(e) {
@@ -510,17 +610,28 @@
         this.callbacks = [];
     }
 
-    // When a promise is resolved, run a callback. This returns a promise
-    // so that a series of events can easily be chained together.
-    Promise.prototype.then = function (callback) {
+    // When a promise is resolved, run a callback with the resolved value.
+    // This returns a promise so that a series of events can easily be chained
+    // together. Any extra arguments are passed as arguments to the callback,
+    // but note that passing extra arguments clobbers the resolved value!
+    Promise.prototype.then = function () {
+        var self = this;
         var p = new Promise();
+        var fn = Array.prototype.shift.apply(arguments);
+        var args = arguments;
+
+        var callback = function () {
+            if (args.length > 0) {
+                p.resolve(fn.apply(window, args));
+            } else {
+                p.resolve(fn.call(window, self.value));
+            }
+        }
 
         if (this.isResolved) {
-            p.resolve(callback(this.value));
+            callback();
         } else {
-            this.callbacks.push(function (value) {
-                p.resolve(callback(value));
-            });
+            this.callbacks.push(callback);
         }
 
         return p;
@@ -549,10 +660,6 @@
         }
     }
 
-    // Apply patches.
-    patchAddEventListener();
-    patchXhrSend();
-
     // Export public functions.
     window[_HH_PROPERTY] = {
         'clickLikelyTriggersXhr': clickLikelyTriggersXhr,
@@ -564,13 +671,18 @@
         'mouseoverXhrElement': mouseoverXhrElement,
         'nextTick': nextTick,
         'patchAddEventListener': patchAddEventListener,
+        'patchAll': patchAll,
         'patchXhrSend': patchXhrSend,
         'scroll': scroll,
         'setDebug': setDebug,
         'setVisual': setVisual,
         'startOverlayWatcher': startOverlayWatcher,
         'trigger': trigger,
+        'tryClickXhr': tryClickXhr,
+        'tryInfiniteScroll': tryInfiniteScroll,
+        'tryMouseoverXhr': tryMouseoverXhr,
         'wait': wait,
+        'when': when,
         'whenAll': whenAll,
         'whenXhrFinished': whenXhrFinished
     };
