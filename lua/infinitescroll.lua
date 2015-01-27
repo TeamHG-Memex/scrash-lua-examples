@@ -24,16 +24,20 @@ function main(splash)
   splash:lock_navigation()
 
   for i=1,page_count do
-    splash:runjs_async([[
-      __headless_horseman__.whenAll(
-        __headless_horseman__.whenXhrFinished(),
-        __headless_horseman__.scroll(window, 'left', 'bottom')
-      ).then(luaResume);
+    splash:wait_for_resume([[
+      function main(splash) {
+        __headless_horseman__.whenAll(
+          __headless_horseman__.whenXhrFinished(),
+          __headless_horseman__.scroll(window, 'left', 'bottom')
+        ).then(splash.resume);
+      }
     ]])
   end
 
-  splash:runjs_async([[
-    __headless_horseman__.scroll(window, 'left', 'top').then(luaResume);
+  splash:wait_for_resume([[
+    function main(splash) {
+      __headless_horseman__.scroll(window, 'left', 'top').then(splash.resume);
+    }
   ]])
 
   splash:stop()

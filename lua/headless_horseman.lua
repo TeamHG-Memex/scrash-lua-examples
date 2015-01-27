@@ -37,14 +37,16 @@ function main(splash)
   assert(splash:go(url))
   splash:lock_navigation()
 
-  splash:runjs_async([[
-    __headless_horseman__
-      .wait(3000)
-      .then(__headless_horseman__.tryInfiniteScroll, 3)
-      .then(__headless_horseman__.tryClickXhr, 3)
-      .then(__headless_horseman__.tryMouseoverXhr, 3)
-      .then(__headless_horseman__.scroll, window, 'left', 'top')
-      .then(luaResume);
+  splash:wait_for_resume([[
+    function main(splash) {
+      __headless_horseman__
+        .wait(3000)
+        .then(__headless_horseman__.tryInfiniteScroll, 3)
+        .then(__headless_horseman__.tryClickXhr, 3)
+        .then(__headless_horseman__.tryMouseoverXhr, 3)
+        .then(__headless_horseman__.scroll, window, 'left', 'top')
+        .then(splash.resume);
+    }
   ]])
 
   splash:stop()

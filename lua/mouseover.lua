@@ -17,11 +17,13 @@ function main(splash)
   assert(splash:go(url))
   splash:lock_navigation()
 
-  splash:runjs_async([[
-    __headless_horseman__.whenAll(
-      __headless_horseman__.whenXhrFinished(2500, 5000),
-      __headless_horseman__.mouseoverXhrElement()
-    ).then(luaResume);
+  splash:wait_for_resume([[
+    function main(splash) {
+      __headless_horseman__.whenAll(
+        __headless_horseman__.whenXhrFinished(2500, 5000),
+        __headless_horseman__.mouseoverXhrElement()
+      ).then(splash.resume);
+    }
   ]])
 
   splash:stop()
