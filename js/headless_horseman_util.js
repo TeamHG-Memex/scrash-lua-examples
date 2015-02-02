@@ -48,13 +48,16 @@
     function clickXhrElement() {
         var p = new Promise();
         var elements = findElementsWithListener('click');
-        var currentElement = 0;
         var okAttribute = _HH_PROPERTY + 'clickChecked';
         var found = false;
 
         // Iterate through elements looking for one that might trigger
         // an XHR.
         for (var index in elements) {
+            if (!elements.hasOwnProperty(index)) {
+                continue;
+            }
+
             var element = elements[index];
 
             if (!element.hasAttribute(okAttribute) && clickLikelyTriggersXhr(element)) {
@@ -139,7 +142,6 @@
     function mouseoverLikelyTriggersXhr(element) {
         var classRegex = /hover/i;
 
-        if (element.hasAttribute('data-asin')) debugLog(element.getAttribute('data-asin'));
         return element.className.match(classRegex);
     }
 
@@ -148,13 +150,16 @@
     function mouseoverXhrElement() {
         var p = new Promise();
         var elements = findElementsWithListener('mouseover');
-        var currentElement = 0;
         var okAttribute = _HH_PROPERTY + 'mouseoverChecked';
         var found = false;
 
         // Iterate through elements looking for one that might trigger
         // an XHR.
         for (var index in elements) {
+            if (!elements.hasOwnProperty(index)) {
+                continue;
+            }
+
             var element = elements[index];
 
             if (!element.hasAttribute(okAttribute) && mouseoverLikelyTriggersXhr(element)) {
@@ -629,7 +634,7 @@
         }
 
         if (this.isResolved) {
-            callback();
+            setTimeout(callback, 0);
         } else {
             this.callbacks.push(callback);
         }
@@ -652,11 +657,9 @@
             this.isResolved = true;
             this.value = value;
 
-            setTimeout(function () {
-                self.callbacks.forEach(function (callback) {
-                    callback(value);
-                });
-            }, 0);
+            self.callbacks.forEach(function (callback) {
+                setTimeout(function () {callback(value)}, 0);
+            });
         }
     }
 

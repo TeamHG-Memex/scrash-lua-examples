@@ -34,6 +34,12 @@ function main(splash)
     __headless_horseman__.startOverlayWatcher();
   ]])
 
+  -- 992px is Bootstrap's minimum "desktop" size. 744 gives the viewport
+  -- a nice 4:3 aspect ratio. We may need to tweak the viewport size even
+  -- higher, based on real world usage... (Don't forget to change PNG width
+  -- argument below to avoid scaling.)
+  splash:set_viewport('992x744')
+
   assert(splash:go(url))
   splash:lock_navigation()
 
@@ -54,7 +60,7 @@ function main(splash)
 
   return {
     html = splash:html(),
-    png = splash:png{width=800},
+    png = splash:png{width=992},
     har = splash:har(),
   }
 end
