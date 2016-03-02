@@ -38,7 +38,7 @@ function main(splash)
   -- a nice 4:3 aspect ratio. We may need to tweak the viewport size even
   -- higher, based on real world usage... (Don't forget to change PNG width
   -- argument below to avoid scaling.)
-  splash:set_viewport('992x744')
+  splash:set_viewport_size(992, 744)
 
   assert(splash:go(url))
   splash:lock_navigation()
@@ -56,7 +56,7 @@ function main(splash)
   ]])
 
   splash:stop()
-  splash:set_viewport("full")
+  splash:set_viewport_full()
 
   return {
     html = splash:html(),

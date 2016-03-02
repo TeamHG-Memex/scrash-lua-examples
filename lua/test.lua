@@ -11,7 +11,7 @@ function main(splash)
   ]])
 
   splash:stop()
-  splash:set_viewport("full")
+  splash:set_viewport_full()
 
   return {
     png = splash:png{width=800},

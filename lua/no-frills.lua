@@ -22,7 +22,7 @@ function main(splash)
 
   splash:wait(2)
   splash:stop()
-  splash:set_viewport("full")
+  splash:set_viewport_full()
 
   return {
     html = splash:html(),
