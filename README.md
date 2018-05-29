@@ -102,4 +102,4 @@ Run tests:
 
 ---
 
-[![define hyperion gray](https://hyperiongray.s3.amazonaws.com/define-hg.svg)](https://hyperiongray.com/?pk_campaign=github&pk_kwd=scrash-lua-examples "Hyperion Gray")
+[![define hyperion gray](https://hyperiongray.s3.amazonaws.com/define-hg.svg)](https://www.hyperiongray.com/?pk_campaign=github&pk_kwd=scrash-lua-examples "Hyperion Gray")
