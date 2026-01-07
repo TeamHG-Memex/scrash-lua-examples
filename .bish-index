@@ -1,0 +1,7 @@
+./run-tests.sh
+./AGENTS.md
+./README.md
+./demo.py
+./tests/test_lua_directives.py
+./tests/__init__.py
+./js/headless_horseman_util.js
